@@ -5,10 +5,42 @@ using Unity.VisualScripting;
 using UnityEngine;
 
 
-public class JumpState
+
+public class Charactor
 {
-    public float jumpPower = 0;
-    public bool isJump = false;
+    public float speed;
+
+    public virtual void Die(Charactor charactor)
+    {
+
+    }
+}
+public class WereWolf:Charactor
+{
+
+    void Setspeed()
+    {
+        this.speed = 5.0f;
+    }
+    float Getspeed()
+    {
+        return this.speed;
+    }
+}
+
+public class Human: Charactor
+{
+    int ammo = 0;
+    void Setspeed()
+    {
+        this.speed = 3.0f;
+    }
+}
+
+public class JumpState//굳이 클래스여야할까
+{
+    public float jumpPower = 0;//점프 힘
+    public bool isJump = false;//아래랑 같음
     public float jumpStartTime = 0;
     public float jumpHight;
     public State jumptype;
@@ -18,19 +50,19 @@ public class JumpState
 
 public class ControllerScript : MonoBehaviour
 {
-    Rigidbody2D rg2d;
+    Rigidbody2D rg2d;//이번 프로젝트에서는 rigdbody를 이용해서 움직일것임
 
     JumpState jumpState = new JumpState();
 
 
 
-    public float jumpForce = 5f;
-    public float jumpDuration = 3f;
-    public bool isJumping = false;
+    public float jumpForce = 5f;//점프 힘
+    public float jumpDuration = 3f;//긴 점프 할 수 있는 시간
+    public bool isJumping = false;//다른곳에서 사용 될 수도 있지만 핵심은 오래누르는 긴 점프를위함 점프 클래스가 있어서 굳이 싶기도 함
 
+    private bool isMoving = false;//update에서 fixedUpdate로 움직임 전해주기 위함
 
-
-    float jumpStartTime;
+    private float InxPos,InyPos;
 
     private void Awake()
     {
@@ -45,6 +77,8 @@ public class ControllerScript : MonoBehaviour
     private void FixedUpdate()
     {
         //Debug.Log("fixedUpdate");
+
+
         if (jumpState.isJump)
         {
             //Jump();
@@ -66,18 +100,27 @@ public class ControllerScript : MonoBehaviour
             }
          
         }
+
+        if (isMoving)
+        {
+            Move();
+        }
+    }
+
+    private void Move()
+    {
+        Vector3 v3 = new Vector3(InxPos, rg2d.velocity.y, 0);
+        
+        rg2d.velocity = v3;
+        Debug.Log(v3+"나는 움직임~~");
     }
 
     private void Update()
     {
 
-        //jumpState.jumptype=JumpState.State.LONG_JUMP;
-
         Debug.Log(jumpState.jumptype);
-        //isGrounded = Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, groundLayer);
-        //Debug.Log("update");
 
-        if (Input.GetKeyDown(KeyCode.W)){
+        if (Input.GetKeyDown(KeyCode.W)){//"W"가 점프라고 생각했을때 구현내용
             Debug.Log("W");
             jumpState.jumpHight= jumpForce;
             jumpState.jumpStartTime=Time.time;
@@ -86,33 +129,34 @@ public class ControllerScript : MonoBehaviour
             jumpState.jumptype= JumpState.State.NORMAL_JUMP;
             
         }
-        
         else if (Input.GetKey(KeyCode.W)&&jumpState.isJump&&Time.time- jumpState.jumpStartTime < jumpDuration) {
             Debug.Log("HOLDDDDDDDDDDDDD");
             jumpState.jumptype = JumpState.State.LONG_JUMP;
-
-            //jumpState.jumpHight = jumpForce * Time.deltaTime;
-            //JumpHigher();
         }
         else
         {
             Debug.Log("else");
             jumpState.jumptype = JumpState.State.IDLE;
         }
-
-        //Debug.Log("jump start" + (Time.time - jumpState.jumpStartTime));
         if (Input.GetKeyUp(KeyCode.W))
         {
             Debug.Log("UPPPPP");
             jumpState.isJump = false;
             jumpState.jumptype = JumpState.State.IDLE;
-            //jumpState.jumpStartTime = 0;
         }
+        InxPos = Input.GetAxis("Horizontal") * 10;
 
-
-        Debug.Log("jumpstart" + jumpState.jumpStartTime);
-        Debug.Log("jumptype"+ jumpState.jumptype);
-
+        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))
+        {
+            isMoving = true;
+            
+            Debug.Log("좌우");
+        }
+        else if (Input.GetKeyUp(KeyCode.A) || Input.GetKeyUp(KeyCode.D))
+        { 
+            isMoving= false;
+            Debug.Log("좌우 입력값 " + InxPos);
+        }
     }
 
     private void Jump()
