@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UIElements;
 using static PlatformScript;
 
@@ -20,103 +21,8 @@ public class JumpState//굳이 클래스여야할까
     public enum State { IDLE, NORMAL_JUMP, LONG_JUMP };
 }
 
-public class ControllerScript : MonoBehaviour
+public partial class ControllerScript : MonoBehaviour
 {
-
-    public class Charactor
-    {
-        public float speed;
-        public bool isHuman = true;
-        public int hidePos = 0;
-
-
-        public virtual void Die(Charactor charactor)
-        {
-
-        }
-
-        public virtual void Setspeed() { }
-
-        public virtual void Attack() { }
-        public void Crouch(GameObject guard)
-        {
-            Debug.Log("크라우치");
-            guard.SetActive(true);
-
-            if (hidePos < 0)
-            {
-
-            }
-
-        }//늑대와 인간 둘다 웅크림이 같다고 가정하기에 그냥 일반함수로 구현
-    }
-    public class WereWolf : Charactor
-    {
-        public int life = 2;
-        private static WereWolf instance;
-
-        public static WereWolf Instance()
-        {
-            if (instance == null)
-            {
-                //Debug.Log("비었음 생성");
-                instance = new WereWolf();
-            }
-            else
-            {
-                //Debug.Log("안 비었기때문에 기존거 전달");
-            }
-            return instance;
-        }
-
-        private WereWolf()
-        {
-            //if (instance == null) Debug.Log("늑대");
-        }
-
-        public override void Setspeed()
-        {
-            Debug.Log("늑대 속도");
-            this.speed = 5.0f;
-        }
-        public override void Attack()
-        {
-            Debug.Log("늑대 공격");
-        }
-
-        float Getspeed()
-        {
-            return this.speed;
-        }
-    }
-
-    public class Human : Charactor
-    {
-        int ammo = 0;
-        private static Human instance;
-
-        private Human() { }
-        public static Human Instance()
-        {
-            if (instance == null)
-            {
-                return instance = new Human();
-            }
-            else
-            {
-                return instance;
-            }
-        }
-        public override void Attack()
-        {
-            Debug.Log("사람 공격");
-        }
-        public override void Setspeed()
-        {
-            Debug.Log("사람 속도");
-            this.speed = 3.0f;
-        }
-    }
 
     private static ControllerScript instance=null;
     public static ControllerScript Instance
@@ -131,7 +37,9 @@ public class ControllerScript : MonoBehaviour
     private ControllerScript() { }
 
 
-
+    public bool b_reload = false;
+    public float currentTime = 0;//재장전관련부분
+    public float duration = 1f;
 
     Rigidbody2D rg2d;//이번 프로젝트에서는 rigdbody를 이용해서 움직일것임
 
@@ -144,7 +52,7 @@ public class ControllerScript : MonoBehaviour
     [SerializeField]
     private bool isMoving = false;//update에서 fixedUpdate로 움직임 전해주기 위함
     [SerializeField]
-    private bool isGround = true;
+    private bool isGround = true;//점프 및 공격한것에 대한 테스트를 위함움직이면서 만약 안 된다면 다시 변수 만들어야함 공격을 했는지 판단하기 위함  
     public bool isHide = false;//크라우치 할 수 있는지 확인 용변수
     public bool isCrouching = false;//크라우치 중인지 확인뇽
 
@@ -163,7 +71,7 @@ public class ControllerScript : MonoBehaviour
 
     Vector2 vec;//레이 위한 것
 
-    [SerializeField] private GameObject guard;
+    [SerializeField] private GameObject guard;//숨었을때 만는는것
 
     private void Awake()
     {
@@ -267,6 +175,18 @@ public class ControllerScript : MonoBehaviour
             Debug.Log($"경계 {collision.bounds.min.x}");
             charactor.hidePos= coverDir(collision);
         }
+
+        if(collision.gameObject.tag=="ammo")//총알이라면
+        {
+            Debug.Log("총알 획득");
+            if (Human.Instance().ammo < 2)
+            {
+                Human.Instance().GetAmmo();
+                Destroy(collision.gameObject);
+                //Human.Instance().Reload();
+            }
+
+        }
     }
 
     private void OnTriggerStay2D(Collider2D collision)
@@ -310,7 +230,7 @@ public class ControllerScript : MonoBehaviour
 
         }
 
-        if (isMoving)
+        if (isMoving&&!isCrouching)
         {
             Move();
         }
@@ -361,12 +281,13 @@ public class ControllerScript : MonoBehaviour
         moveSpeed = charactor.speed;
 
     }
-
     private void InputManager()
     {
         if (Input.GetMouseButtonDown(0))//좌클릭
         {
             _Attack();
+
+
         }
         if (Input.GetMouseButtonDown(1))//우클릭
         {
@@ -395,9 +316,13 @@ public class ControllerScript : MonoBehaviour
         {
             if (isHide)
             {
-                guard.transform.position = this.gameObject.transform.GetChild(0).transform.position;
+                guard.transform.position = this.gameObject.transform.GetChild(0).transform.position;//가드 위치를 가드 포인트 위치로 옮김
+                transform.position = charactor.hidePos;
+                rg2d.velocity = Vector2.zero;//만약 점프가 되려고하면 x만 0으로 초기화
+                //rg2d.position = transform.position;
                 charactor.Crouch(guard);
                 isCrouching = true;
+                isMoving = false;
             }
             if (currentOneWayPlatform != null)//밑 점프 부분
             {
@@ -429,6 +354,17 @@ public class ControllerScript : MonoBehaviour
 
         if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D))
         {
+            Vector3 tempvec = attackPoint.transform.localPosition;
+            if (Input.GetKey(KeyCode.A))//좌우 움직일때 공격포인트 x축 바뀌주기위함
+            {
+                tempvec.x = -1.2f;
+                attackPoint.transform.localPosition = tempvec;
+            }
+            else
+            {
+                tempvec.x = 1.2f;
+                attackPoint.transform.localPosition = tempvec;   
+            }
             InxPos = Input.GetAxis("Horizontal") * moveSpeed;
             isMoving = true;
 
@@ -446,6 +382,17 @@ public class ControllerScript : MonoBehaviour
     private void Update()
     {
         InputManager();
+
+
+        if (charactor.isHuman)//인간상태일때 지속적으로 해야하는 함수들 넣기위함
+        {
+            //StartCoroutine(UIController.Instance.DrawReload());
+            charactor.Reload();
+        }
+        else
+        {
+
+        }
         //_Raycast();
     }
 
@@ -520,22 +467,65 @@ public class ControllerScript : MonoBehaviour
 
     }
 
-    int coverDir(Collider2D collision)
+    Vector3 coverDir(Collider2D collision)
     {
         float check = collision.gameObject.transform.position.x - this.gameObject.transform.position.x;
+        Vector3 correct_pos = Vector3.zero;
 
         Debug.Log($"트리거 체크 {Mathf.Sign(check)}");
         isHide = true;
         Debug.Log("트리거엄페물");
         if (Mathf.Sign(check) < 0)
         {
-            this.gameObject.transform.GetChild(0).transform.localPosition = new Vector3(-0.76f, 0, 0);
+            this.gameObject.transform.GetChild(0).transform.localPosition = new Vector3(-0.78f, 0, 0);//0.78
         }
         else
         {
-            this.gameObject.transform.GetChild(0).transform.localPosition = new Vector3(0.76f, 0, 0);
+            this.gameObject.transform.GetChild(0).transform.localPosition = new Vector3(0.78f, 0, 0);
         }
 
-        return (int)Mathf.Sign(check);
+        if ((int)Mathf.Sign(check) < 0)
+        {
+            correct_pos = new Vector3(collision.bounds.max.x, transform.position.y, transform.position.z);
+        }
+        else
+        {
+            correct_pos = new Vector3(collision.bounds.min.x, transform.position.y, transform.position.z);
+        }
+
+        return correct_pos;
+    }
+
+    public bool _DrawReload(ref bool r_bool)
+    {
+        //재장전 애니메이션 및 내용들
+        if (currentTime <= duration)//1 = duration temp/duration 
+        {
+            currentTime += Time.deltaTime;
+            Debug.Log("아직"+currentTime);
+            r_bool = true;
+            //_DrawReload();
+            return false;
+        }
+        else
+        {
+
+            Debug.Log("1초 완");
+            
+            currentTime = 0;
+            r_bool = false;
+            return true;
+        }
+    }
+
+    public Vector3 ClickPos()
+    {
+        var screenPoint = Input.mousePosition;//마우스 위치 가져옴
+        screenPoint.z = Camera.main.transform.position.z;
+        worldPosition=Camera.main.ScreenToWorldPoint(screenPoint);
+
+
+
+        return worldPosition;
     }
 }

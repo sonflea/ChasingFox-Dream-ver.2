@@ -27,6 +27,7 @@ public class EnemyScript : MonoBehaviour
     void Update()
     {
         //Debug.Log(playerPos);
+        enemypos = transform.position;
         if (Input.GetKeyDown(KeyCode.X))
         {
             Shoot();
@@ -39,9 +40,11 @@ public class EnemyScript : MonoBehaviour
     public void Shoot()
     {
         //Instantiate(bullet,new Vector3(0,0,0),Quaternion.identity);
-        GameObject _bullet = Instantiate(bullet, this.transform.parent.gameObject.transform.position, transform.rotation);
-        _bullet.transform.SetParent(this.transform);
+        GameObject _bullet = Instantiate(bullet, enemypos, transform.rotation);
+        //_bullet.transform.SetParent(this.transform);
         playerPos = player.gameObject.transform.position;
+        _bullet.GetComponent<BulletScript>().targetPos = playerPos;
+        _bullet.GetComponent<BulletScript>().shootPos = enemypos;
         //enemypos = transform.position;
         Debug.Log("shoot"+playerPos+"enemypos"+enemypos);
         //_bullet.transform.position = Vector2.left;

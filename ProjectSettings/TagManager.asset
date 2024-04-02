@@ -8,6 +8,9 @@ TagManager:
   - cover
   - platform
   - bullet
+  - ammo
+  - enemyBullet
+  - Enemy
   layers:
   - Default
   - TransparentFX
@@ -18,9 +21,9 @@ TagManager:
   - Ground
   - Player
   - OneWayPlatform
-  - bullet
-  - 
-  - 
+  - Bullet
+  - Enemy
+  - EnemyBullet
   - 
   - 
   - 
