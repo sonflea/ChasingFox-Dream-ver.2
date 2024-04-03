@@ -49,5 +49,14 @@ public class EnemyScript : MonoBehaviour
         Debug.Log("shoot"+playerPos+"enemypos"+enemypos);
         //_bullet.transform.position = Vector2.left;
     }
-    
+
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.name == "MeleeAttack")
+        {
+            Debug.Log("쌈@뽕한 근접 공격 뒤졌죠?");
+        }
+    }
+
 }

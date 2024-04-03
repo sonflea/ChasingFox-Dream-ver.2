@@ -97,6 +97,7 @@ public partial class ControllerScript : MonoBehaviour
         if (collision.gameObject.tag == "ground" || collision.gameObject.tag == "platform")//지면 확인 점프용
         {
             isGround = true;
+            //WereWolf.Instance().isAttacking = false;// 이 부분이 있으면 땅에서 연속 공격 가능 
             if (collision.gameObject.tag == "platform")
             {
                 currentOneWayPlatform = collision.gameObject;
@@ -135,6 +136,8 @@ public partial class ControllerScript : MonoBehaviour
 
         }
 
+
+
     }
 
 
@@ -162,6 +165,10 @@ public partial class ControllerScript : MonoBehaviour
                 currentOneWayPlatform = collision.gameObject;
             }
         }
+        if (collision.gameObject.tag == "Wall")
+        {
+
+        }
 
 
     }
@@ -173,7 +180,7 @@ public partial class ControllerScript : MonoBehaviour
         if (collision.gameObject.tag == "cover")
         {
             Debug.Log($"경계 {collision.bounds.min.x}");
-            charactor.hidePos= coverDir(collision);
+            charactor.hidePos= HideDir(collision);
         }
 
         if(collision.gameObject.tag=="ammo")//총알이라면
@@ -193,7 +200,7 @@ public partial class ControllerScript : MonoBehaviour
     {
         if (collision.gameObject.tag == "cover")
         {
-            charactor.hidePos = coverDir(collision);
+            charactor.hidePos = HideDir(collision);
         }
     }
     private void OnTriggerExit2D(Collider2D collision)
@@ -230,7 +237,7 @@ public partial class ControllerScript : MonoBehaviour
 
         }
 
-        if (isMoving&&!isCrouching)
+        if (isMoving&&!isCrouching&&!WereWolf.Instance().isAttacking)
         {
             Move();
         }
@@ -289,12 +296,12 @@ public partial class ControllerScript : MonoBehaviour
 
 
         }
-        if (Input.GetMouseButtonDown(1))//우클릭
+        if (Input.GetMouseButtonDown(1)&&!isCrouching)//우클릭, 크라우치 안 하고있을때 폼체인지
         {
             Formchange();
         }
 
-        if (Input.GetKeyDown(KeyCode.W) && isGround)//점프키 관련 만약 키가 변한다면 keycode만 변경하면 됨
+        if (Input.GetKeyDown(KeyCode.W) && isGround&&!WereWolf.Instance().isAttacking)//점프키 관련 만약 키가 변한다면 keycode만 변경하면 됨
         {//"W"가 점프라고 생각했을때 구현내용
             Jump();
         }
@@ -354,7 +361,8 @@ public partial class ControllerScript : MonoBehaviour
 
         if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D))
         {
-            Vector3 tempvec = attackPoint.transform.localPosition;
+            //현재 클릭시 바라보는 방향으로 되어 있기 때문 만약 캐릭터 사진이 온다면 ad 입력시 filp.x기능 사용 예정 
+            /*Vector3 tempvec = attackPoint.transform.localPosition;
             if (Input.GetKey(KeyCode.A))//좌우 움직일때 공격포인트 x축 바뀌주기위함
             {
                 tempvec.x = -1.2f;
@@ -364,7 +372,7 @@ public partial class ControllerScript : MonoBehaviour
             {
                 tempvec.x = 1.2f;
                 attackPoint.transform.localPosition = tempvec;   
-            }
+            }*/
             InxPos = Input.GetAxis("Horizontal") * moveSpeed;
             isMoving = true;
 
@@ -467,33 +475,32 @@ public partial class ControllerScript : MonoBehaviour
 
     }
 
-    Vector3 coverDir(Collider2D collision)
+    Vector3 HideDir(Collider2D collision)
     {
-        float check = collision.gameObject.transform.position.x - this.gameObject.transform.position.x;
+        int check = CheckDir(collision.transform.position);
         Vector3 correct_pos = Vector3.zero;
 
         Debug.Log($"트리거 체크 {Mathf.Sign(check)}");
         isHide = true;
         Debug.Log("트리거엄페물");
-        if (Mathf.Sign(check) < 0)
-        {
-            this.gameObject.transform.GetChild(0).transform.localPosition = new Vector3(-0.78f, 0, 0);//0.78
-        }
-        else
-        {
-            this.gameObject.transform.GetChild(0).transform.localPosition = new Vector3(0.78f, 0, 0);
-        }
 
         if ((int)Mathf.Sign(check) < 0)
         {
+            this.gameObject.transform.GetChild(0).transform.localPosition = new Vector3(-0.78f, 0, 0);//0.78
             correct_pos = new Vector3(collision.bounds.max.x, transform.position.y, transform.position.z);
         }
         else
         {
+            this.gameObject.transform.GetChild(0).transform.localPosition = new Vector3(0.78f, 0, 0);
             correct_pos = new Vector3(collision.bounds.min.x, transform.position.y, transform.position.z);
         }
 
         return correct_pos;
+    }
+    int CheckDir(Vector3 tr)
+    {
+        int check = (int)Mathf.Sign(tr.x - this.gameObject.transform.position.x);
+        return check;
     }
 
     public bool _DrawReload(ref bool r_bool)
@@ -523,6 +530,14 @@ public partial class ControllerScript : MonoBehaviour
         var screenPoint = Input.mousePosition;//마우스 위치 가져옴
         screenPoint.z = Camera.main.transform.position.z;
         worldPosition=Camera.main.ScreenToWorldPoint(screenPoint);
+        int check = CheckDir(worldPosition);
+        if (check<0){
+            this.gameObject.transform.rotation = Quaternion.Euler(0, 0, 180);
+        }
+        else
+        {
+            this.gameObject.transform.rotation = Quaternion.Euler(0, 0, 0);
+        }
 
 
 
