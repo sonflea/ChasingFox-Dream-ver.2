@@ -74,20 +74,20 @@ public class BulletScript : MonoBehaviour
     private void Update()
     {
         startTime+= Time.deltaTime;
-        if (startTime > 4)
+        if (startTime > 4)//그냥 총알이 4초 넘어가면 파괴하기 위함
         {
             Destroy(this.gameObject);
             
         }
 
-        if (!ControllerScript.Instance.isCrouching)
-        {
+        if (!ControllerScript.Instance.isCrouching)//엄폐중이라면 해당 오브젝트를 trigger를 꺼서 충돌 가능하도록 만듦. (이 부분은 적군총알과 아군총알 같이 쓰기때문에 오류 일으킬 가능성이 보임 따라서 this.gameObject로 접근하는게 아닌 적 총알 프리펩을 받아서 그 오브젝트를 수정해야할것으로 보임
+        {//대충 테스트 했을때는 문제가 없었음
             this.gameObject.GetComponent<CapsuleCollider2D>().isTrigger = false;
         }
     }
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.gameObject.name == "guard")
+        if (collision.gameObject.name == "guard")//필요없어보임
         {
             this.gameObject.GetComponent<CapsuleCollider2D>().isTrigger = true;
         }
@@ -111,7 +111,7 @@ public class BulletScript : MonoBehaviour
     }
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.name == "guard")
+        if (collision.gameObject.name == "guard")//가드 만날겨우 trigger를 켜서 collision이 안일어나도록함
         {
             this.gameObject.GetComponent<CapsuleCollider2D>().isTrigger = true;
         }
@@ -138,7 +138,7 @@ public class BulletScript : MonoBehaviour
     }
     private void OnCollisionExit2D(Collision2D collision)
     {
-        if (collision.gameObject.name == "guard")
+        if (collision.gameObject.name == "guard")//가드 벗어나면 tigger를 false해서 collision을 할 수 있도록 만든다
         {
             Debug.Log("벗어남");
             this.gameObject.GetComponent<CapsuleCollider2D>().isTrigger = false;

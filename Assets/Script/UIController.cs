@@ -5,12 +5,12 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
 
-public class UIController : MonoBehaviour
+public class UIController : MonoBehaviour//해당 스크립트는 UI를 그리는데 필요함
 {
     //싱글톤 구현? 다른 ui시스템 스크립트를 넣어두고 여기서 관리 혹은 static으로 불러옴 근데 static으로 불러오는것보다는 싱글톤이 좋아보임
-    [SerializeField] private UnityEngine.UI.Image image;
-    public bool reloadDoon = true;
-    [SerializeField] private float duration = 1f;
+    [SerializeField] private UnityEngine.UI.Image image;//UI그림 이미지 담는 변수
+    public bool reloadDoon = true;//재장전 완료를 알려주는 변수
+    [SerializeField] private float duration = 1f;//그림 그리는데 필요한 시간
     public bool startCor = false;
     // Start is called before the first frame update
 
@@ -41,14 +41,14 @@ public class UIController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (ControllerScript.Instance.b_reload)
+        if (ControllerScript.Instance.b_reload)//만약 재장전 중이라면
         {
-            _DrawReload();
-            Debug.Log("그리는중");
+            _DrawReload();//재장전 그림
+            //Debug.Log("그리는중");
         }
         else
         {
-            Debug.Log("그림완");
+            //Debug.Log("그림완");
         }
 
         
@@ -90,11 +90,11 @@ public class UIController : MonoBehaviour
         
     }
 
-    public void _DrawReload()//ControllerScript 의 temp를 받아서 가능함
+    public void _DrawReload()//ControllerScript 의 temp를 받아서 가능함 재장전 그리는 애니메이션
     {
         //재장전 애니메이션 및 내용들
-        image.fillAmount = ControllerScript.Instance.currentTime / ControllerScript.Instance.duration;
-        
+        image.fillAmount = ControllerScript.Instance.currentTime / ControllerScript.Instance.duration;//시간 관련 변수들은 ContollerScript의 _DrawReload함수에서 측정중
+
     }
 
 
